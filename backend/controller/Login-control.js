@@ -30,10 +30,9 @@ export const Login = async (req,res)=>{
         //store cookies
         const options = {
             expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-            httpOnly: true, //only manipulate by server not by client/user
+            httpOnly: true, 
         };
 
-        //send the token
         res.status(200).cookie("token", token, options).json({
             message: "You have successfully logged in!",
             success: true,
