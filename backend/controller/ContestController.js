@@ -1,5 +1,5 @@
 
-//import express from "express";
+
 import Contestproblem from "../model/ContestProblem.js";
 
 export const addContestProblem = async (req, res) => {
@@ -43,7 +43,7 @@ export const addContestProblem = async (req, res) => {
   }
 };
 
-//to show all user problems to admin dashboard
+
 export const allContestProblem = async (req, res) => {
   try {
     const problems = await Contestproblem.find();
@@ -54,7 +54,7 @@ export const allContestProblem = async (req, res) => {
 };
 
 export const allContestProblembyId = async (req, res) => {
-    //console.log("reached allContestProblembyId")
+
   try {
     const id = req.params.id; // Trim any leading/trailing whitespace
 
