@@ -27,7 +27,7 @@ export const Login = async (req,res)=>{
         user.token = token;
         user.password = undefined;
 
-        //store cookies
+       
         const options = {
             expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
             httpOnly: true, 
