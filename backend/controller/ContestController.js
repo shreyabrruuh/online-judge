@@ -56,7 +56,7 @@ export const allContestProblem = async (req, res) => {
 export const allContestProblembyId = async (req, res) => {
 
   try {
-    const id = req.params.id; // Trim any leading/trailing whitespace
+    const id = req.params.id; 
 
     const problem = await Contestproblem.findById(id);
     if (!problem) {
