@@ -19,7 +19,7 @@ const UpdateProb = () => {
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const response = await axios.get(`https://online-judge-qmoq.onrender.com/problem/${id}`);
+        const response = await axios.get(`http://localhost:8000/problem/${id}`);
         setProblem(response.data);
         setLoading(false);
       } catch (error) {
@@ -63,7 +63,7 @@ const UpdateProb = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await axios.put(`https://online-judge-qmoq.onrender.com/problem/${id}`, problem);
+      const { data } = await axios.put(`http://localhost:8000/problem/${id}`, problem);
       console.log('Problem updated:', data);
       alert('Problem updated successfully');
       navigate('/problems');
