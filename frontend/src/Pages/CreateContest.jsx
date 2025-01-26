@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const AddContestProblem = (/*{ isLoggedIn }*/) => {
+const AddContestProblem = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [level, setLevel] = useState("Easy");
@@ -8,6 +8,7 @@ const AddContestProblem = (/*{ isLoggedIn }*/) => {
   const [constraints, setConstraints] = useState("");
   const [testCases, setTestCases] = useState([{ input: "", output: "" }]);
   const [topics, setTopics] = useState([]);
+
   const handleTestCaseChange = (index, event) => {
     const newTestCases = testCases.map((testCase, i) =>
       i === index
@@ -16,6 +17,7 @@ const AddContestProblem = (/*{ isLoggedIn }*/) => {
     );
     setTestCases(newTestCases);
   };
+
   const handleExampleChange = (index, field, value) => {
     const newExamples = [...examples];
     newExamples[index][field] = value;
@@ -25,6 +27,7 @@ const AddContestProblem = (/*{ isLoggedIn }*/) => {
   const addTestCase = () => {
     setTestCases([...testCases, { input: "", output: "" }]);
   };
+
   const addExample = () => {
     setExamples([...examples, { inputExapmle: '', outputExample: '' }]);
   };
@@ -43,7 +46,7 @@ const AddContestProblem = (/*{ isLoggedIn }*/) => {
 
     try {
       const response = await fetch(
-        `https://online-judge-qmoq.onrender.com/addContestProblem`,
+        `http://localhost:8000/addContestProblem`,
         {
           method: "POST",
           headers: {
@@ -55,7 +58,6 @@ const AddContestProblem = (/*{ isLoggedIn }*/) => {
 
       if (response.ok) {
         alert("Problem added successfully");
-        // Reset the form
         setTitle("");
         setDescription("");
         setLevel("Easy");
@@ -64,18 +66,12 @@ const AddContestProblem = (/*{ isLoggedIn }*/) => {
         setTestCases([{ input: "", output: "" }]);
         setTopics([]);
       } else {
-        console.log("cant add0");
         alert("Error adding problem");
       }
     } catch (error) {
-      console.log("cant add");
       alert("Error adding problem");
     }
   };
-  /*
-  if (!isLoggedIn) {
-    return <p className="text-yellow-400">Please log in to add a problem.</p>;
-  }*/
 
   return (
     <form
@@ -222,3 +218,4 @@ const AddContestProblem = (/*{ isLoggedIn }*/) => {
 };
 
 export default AddContestProblem;
+
