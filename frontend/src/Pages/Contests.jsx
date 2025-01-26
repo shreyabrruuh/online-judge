@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import {useAuth} from '../AuthContext.jsx'
-import trophy from '../assets/trophy.png'
+import { useAuth } from '../AuthContext.jsx';
+import trophy from '../assets/trophy.png';
 
 const ContestPage = () => {
   const [timeLeft, setTimeLeft] = useState(3600); // example: 1 hour in seconds
   const [isStarted, setIsStarted] = useState(false);
   const [problems, setProblems] = useState([]);
   const [solvedProblems, setSolvedProblems] = useState({});
-  const {user, role} = useAuth();
+  const { user, role } = useAuth();
 
   useEffect(() => {
     let timer;
@@ -26,7 +26,7 @@ const ContestPage = () => {
     const fetchProblems = async () => {
       try {
         const response = await axios.get(
-          `https://online-judge-qmoq.onrender.com/allContestProblem`
+          `http://localhost:8000/allContestProblem`
         );
         setProblems(response.data);
       } catch (error) {
@@ -41,7 +41,7 @@ const ContestPage = () => {
     const fetchSolvedStatus = async () => {
       try {
         const response = await axios.get(
-          `https://online-judge-qmoq.onrender.com/solvedproblems/${user}`
+          `http://localhost:8000/solvedproblems/${user}`
         );
         const solvedStatus = response.data.reduce((acc, problem) => {
           acc[problem._id] = problem.verdict === "Success";
@@ -54,7 +54,7 @@ const ContestPage = () => {
     };
 
     fetchSolvedStatus();
-  }, []);
+  }, [user]);
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -69,23 +69,23 @@ const ContestPage = () => {
   return (
     <div className="min-h-screen pt-20 bg-gradient-to-br from-slate-800 to-black p-5">
       <div className="trophy relative flex items-center justify-center h-auto">
-      <img src={trophy} alt="trophy" className="z-10" />
-      {role==='admin' &&(
-      <span className="absolute top-5 right-5">
-        <Link to='/CreateContest'>
-          <button className="bg-sky-700 text-white font-extrabold p-2 px-6 rounded-xl hover:bg-sky-500 transition-colors">
-            Create Contest problem
-          </button>
-        </Link>
-      </span>
-      )}
-    </div>
+        <img src={trophy} alt="trophy" className="z-10" />
+        {role === 'admin' && (
+          <span className="absolute top-5 right-5">
+            <Link to='/CreateContest'>
+              <button className="bg-sky-700 text-white font-extrabold p-2 px-6 rounded-xl hover:bg-sky-500 transition-colors">
+                Create Contest problem
+              </button>
+            </Link>
+          </span>
+        )}
+      </div>
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold mb-4 text-center">
           Ready! To Showcase Your Coding Skills
         </h1>
         <div className="text-2xl font-semibold mb-4">
-          Time Left:{" "}
+          Time Left: {" "}
           <span className="text-red-500">{formatTime(timeLeft)}</span>
         </div>
         <button
@@ -127,7 +127,6 @@ const ContestPage = () => {
             </div>
           ))}
         </div>
-        
       </div>
     </div>
   );
