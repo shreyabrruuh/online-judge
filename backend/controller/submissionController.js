@@ -27,63 +27,87 @@ export const createSubmission = async(req,res)=>{
     }
 }
 
-export const submitCode = async (req, res) => {
+
+ export const submitCode = async (req, res) => {
   const { userId, problemId, language, code } = req.body;
 
   console.log("Request: ", req.body);
 
   if (code === undefined) {
-    return res.status(400).json({ success: false, message: 'Code is required' });
+    return res.status(400).json({ success: false, message: "Code is required" });
   }
 
   try {
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     const problem = await Problem.findById(problemId);
     if (!problem) {
-      return res.status(404).json({ success: false, message: 'Problem not found' });
+      return res.status(404).json({ success: false, message: "Problem not found" });
     }
 
-    // Ensure the TestCases field is populated
     if (!problem.TestCases || problem.TestCases.length === 0) {
-      return res.status(400).json({ success: false, message: 'No test cases found for the problem' });
+      return res
+        .status(400)
+        .json({ success: false, message: "No test cases found for the problem" });
     }
 
     const filePath = generateFile(language, code);
-    console.log('Generated file path:', filePath);
+    console.log("Generated file path:", filePath);
 
     let allPassed = true;
     let results = [];
 
     for (const [index, testCase] of problem.TestCases.entries()) {
       const testCaseInputPath = await generateInputFile(testCase.input);
-      console.log('Generated input file path:', testCaseInputPath);
+      console.log("Generated input file path:", testCaseInputPath);
 
-      const testCaseOutput = await executeCode(language, filePath, testCaseInputPath);
-      console.log('Test case output:', testCaseOutput);
+      try {
+        const testCaseOutput = await Promise.race([
+          executeCode(language, filePath, testCaseInputPath),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Execution Timeout")), 5000) 
+          ),
+        ]);
 
-      const passed = testCaseOutput.trim() === testCase.expectedOutput.trim();
-      results.push({ testCase: `TestCase ${index + 1}`, passed, output: testCaseOutput.trim() });
+        console.log("Test case output:", testCaseOutput);
 
-      if (!passed) {
+        const passed = testCaseOutput.trim() === testCase.expectedOutput.trim();
+        results.push({
+          testCase: `TestCase ${index + 1}`,
+          passed,
+          output: testCaseOutput.trim(),
+        });
+
+        if (!passed) {
+          allPassed = false;
+          break;
+        }
+      } catch (error) {
+        console.error(`Error during TestCase ${index + 1} execution:`, error.message);
+        results.push({
+          testCase: `TestCase ${index + 1}`,
+          passed: false,
+          output: error.message,
+        });
         allPassed = false;
         break;
       }
     }
 
-    const verdict = allPassed ? 'Accepted' : 'Wrong Answer';
+    const verdict = allPassed ? "Accepted" : "Wrong Answer";
     res.status(200).json({ success: true, verdict, results });
   } catch (error) {
     console.error("Error during submission:", error);
     res.status(500).json({ success: false, message: "Error: " + error.message });
   }
-};    
+};
 
 
-// Get all problems with submission counts
+
+
 export const submitCount = async (req, res) => {
   try {
     const problems = await Problem.find({});
@@ -117,7 +141,6 @@ export const submitControl = async(req,res)=>{
   const { userId, code, language, verdict, result } = req.body;
 
   try {
-    // Create a new submission
     const submission = new Submission({
       userId,
       problemId,
@@ -125,12 +148,12 @@ export const submitControl = async(req,res)=>{
       language,
       verdict,
       result,
-      count: 1 // Initialize count for new submission
+      count: 1 
     });
 
     await submission.save();
 
-    // Update the submission count in the Problem model
+   
     await Submission.findByIdAndUpdate(problemId, { $inc: { count: 1 } });
 
     res.status(201).json(submission);
@@ -162,7 +185,6 @@ export const submitContestCode = async(req,res)=>{
       return res.status(404).json({ success: false, message: 'Problem not found' });
     }
 
-    // Ensure the TestCases field is populated
     if (!Contestprob.testCases || Contestprob.testCases.length === 0) {
       return res.status(400).json({ success: false, message: 'No test cases found for the problem' });
     }
