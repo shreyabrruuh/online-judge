@@ -6,6 +6,8 @@ import {generateFile}  from './generateFile.cjs';
 import {generateInputFile} from './generateInput.cjs';
 import {executeCode} from './executeCode.cjs';
 
+
+
 export const createSubmission = async(req,res)=>{
     try{
         const {userId,problemId,title,language,code,verdict,count} = req.body;
@@ -27,8 +29,7 @@ export const createSubmission = async(req,res)=>{
     }
 }
 
-
- export const submitCode = async (req, res) => {
+export const submitCode = async (req, res) => {
   const { userId, problemId, language, code } = req.body;
 
   console.log("Request: ", req.body);
@@ -48,6 +49,7 @@ export const createSubmission = async(req,res)=>{
       return res.status(404).json({ success: false, message: "Problem not found" });
     }
 
+    
     if (!problem.TestCases || problem.TestCases.length === 0) {
       return res
         .status(400)
@@ -57,7 +59,6 @@ export const createSubmission = async(req,res)=>{
     const filePath = generateFile(language, code);
     console.log("Generated file path:", filePath);
 
-    let allPassed = true;
     let results = [];
 
     for (const [index, testCase] of problem.TestCases.entries()) {
@@ -65,10 +66,11 @@ export const createSubmission = async(req,res)=>{
       console.log("Generated input file path:", testCaseInputPath);
 
       try {
+        // Add timeout mechanism
         const testCaseOutput = await Promise.race([
           executeCode(language, filePath, testCaseInputPath),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Execution Timeout")), 5000) 
+            setTimeout(() => reject(new Error("TimeoutError: Execution exceeded allowed time")), 4000) 
           ),
         ]);
 
@@ -82,28 +84,39 @@ export const createSubmission = async(req,res)=>{
         });
 
         if (!passed) {
-          allPassed = false;
-          break;
+          throw new Error(`Test Case ${index + 1} failed.`);
         }
       } catch (error) {
-        console.error(`Error during TestCase ${index + 1} execution:`, error.message);
-        results.push({
-          testCase: `TestCase ${index + 1}`,
-          passed: false,
-          output: error.message,
+        let errorType;
+
+        if (error.message.includes("TimeoutError")) {
+          errorType = "Timeout Error";
+        } else if (error.message.includes("Compilation Error")) {
+          errorType = "Compilation Error";
+        } else if (error.message.includes("Runtime Error")) {
+          errorType = "Runtime Error";
+        } else {
+          errorType = "Unknown Error";
+        }
+
+        console.error(`Error during TestCase ${index + 1}:`, error.message);
+        res.status(400).json({
+          success: false,
+          message: `Test case ${index + 1} failed: ${errorType}`,
+          details: error.message,
+          results,
         });
-        allPassed = false;
-        break;
+        return; 
       }
     }
 
-    const verdict = allPassed ? "Accepted" : "Wrong Answer";
-    res.status(200).json({ success: true, verdict, results });
+    res.status(200).json({ success: true, verdict: "Accepted", results });
   } catch (error) {
     console.error("Error during submission:", error);
     res.status(500).json({ success: false, message: "Error: " + error.message });
   }
 };
+
 
 
 
