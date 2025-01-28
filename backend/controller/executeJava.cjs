@@ -1,65 +1,64 @@
 const { exec } = require("child_process");
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
+const { v4: uuid } = require("uuid");
 
-const getClassName = (fileContent) => {
-  const classNameMatch = fileContent.match(/public\s+class\s+(\w+)/);
-  if (classNameMatch) {
-    return classNameMatch[1];
-  }
-  throw new Error("No public class found in the file.");
-};
+const executeJava = async (code, input) => {
+  try {
+    const jobId = uuid(); 
+    const tempDir = path.join(__dirname, "temp", jobId);
 
-const executeJava = (filepath, inputPath) => {
-  const dirPath = path.dirname(filepath);
-  const fileContent = fs.readFileSync(filepath, 'utf-8');
-  const className = getClassName(fileContent);
-  const tempFilePath = path.join(dirPath, `Main.java`);
+   
+    fs.mkdirSync(tempDir, { recursive: true });
 
-  return new Promise((resolve, reject) => {
-    // Rename the file to Main.java
-    fs.rename(filepath, tempFilePath, (renameErr) => {
-      if (renameErr) {
-        return reject({ error: renameErr });
-      }
-      console.log("going for compilation");
-      // Compile the Java file
+  
+    const javaFilePath = path.join(tempDir, "Main.java");
+    const inputFilePath = path.join(tempDir, "input.txt");
+
+   
+    fs.writeFileSync(javaFilePath, code);
+    fs.writeFileSync(inputFilePath, input);
+
+    
+    await new Promise((resolve, reject) => {
+      exec(`javac ${javaFilePath}`, (error, stdout, stderr) => {
+        if (error) {
+          reject({ error: "Compilation Error", details: stderr });
+        } else {
+          resolve(stdout);
+        }
+      });
+    });
+
+   
+    const output = await new Promise((resolve, reject) => {
       exec(
-        `javac ${tempFilePath}`,
-        (compileError, compileStdout, compileStderr) => {
-          if (compileError) {
-            return reject({ error: compileError, stderr: compileStderr });
+        `java -cp ${tempDir} Main < ${inputFilePath}`,
+        { timeout: 5000 }, 
+        (error, stdout, stderr) => {
+          if (error) {
+            reject({ error: "Runtime Error", details: stderr || error.message });
+          } else {
+            resolve(stdout);
           }
-          console.log("Compile Stdout: ", compileStdout);
-          // Construct the command to run the compiled Java class
-          let command = `java -cp ${dirPath} ${className}`;
-          if (inputPath) {
-            command += ` < ${inputPath}`;
-          }
-
-          // Execute the Java class
-          exec(command, (runError, stdout, stderr) => {
-            if (runError) {
-              return reject({ error: runError, stderr });
-            }
-            if (stderr) {
-              return reject(stderr);
-            }
-
-            // Clean up: Rename the file back to its original name
-            fs.rename(tempFilePath, filepath, (cleanupErr) => {
-              if (cleanupErr) {
-                return reject({ error: cleanupErr });
-              }
-              resolve(stdout);
-            });
-          });
         }
       );
     });
-  });
+
+   
+    fs.rmSync(tempDir, { recursive: true, force: true });
+
+    return { output: output.trim() };
+  } catch (err) {
+    console.error("Error during Java execution:", err);
+
+    
+    if (tempDir && fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+
+    throw err; 
+  }
 };
 
-module.exports= {
-  executeJava,
-};
+module.exports = { executeJava };
