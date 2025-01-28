@@ -8,7 +8,7 @@ const {executeCode} = require('./executeCode.js')
 const app = express();
 app.use(cors());
 
-//middlewares
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
